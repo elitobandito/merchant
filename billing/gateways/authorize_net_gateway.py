@@ -108,6 +108,14 @@ class AuthorizeNetGateway(Gateway):
         post['first_name'] = credit_card.first_name
         post['last_name'] = credit_card.last_name
 
+    def add_echeck(self, post, options):
+        post['method'] = options['method']
+        post['bank_aba_code'] = options['bank_aba_code']
+        post['bank_acct_num'] = options['bank_acct_num']
+        post['bank_acct_type'] = options['bank_acct_type']
+        post['echeck_type'] = options['echeck_type']
+        post['recurring_billing'] = options['recurring_billing']
+
     def add_address(self, post, options):
         """add billing/shipping address details to the request parameters"""
         if options.get('billing_address', None):
@@ -201,12 +209,15 @@ class AuthorizeNetGateway(Gateway):
         credit card for specified money"""
         if not options:
             options = {}
-        if not self.validate_card(credit_card):
+        if credit_card and not self.validate_card(credit_card):
             raise InvalidCard("Invalid Card")
 
         post = {}
         self.add_invoice(post, options)
-        self.add_creditcard(post, credit_card)
+        if credit_card:
+            self.add_creditcard(post, credit_card)
+        if options.get('method', None):
+            self.add_echeck(post, options)
         self.add_address(post, options)
         self.add_customer_data(post, options)
 
